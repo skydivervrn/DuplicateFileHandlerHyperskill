@@ -1,0 +1,16 @@
+<h2>Sorting math constants</h2>
+<div class="step-text">
+<p></p>
+<p>Below you will see a Go program that sorts a slice of <code class="language-go">float64</code> mathematical constants:</p>
+<pre><code class="language-go">package main
+
+import "sort"
+
+func main() {
+    constants := []float64{1.618, 3.1416, 2.718, 1.414, 0.577}
+    sort.Slice(constants, func(i, j int) bool {
+        return constants[i] &gt; constants[j]
+    })
+}</code></pre>
+<p>Write below what will be the number in the second index (<code class="language-go">constants[2]</code>) of the slice after it has been sorted.</p>
+</div>

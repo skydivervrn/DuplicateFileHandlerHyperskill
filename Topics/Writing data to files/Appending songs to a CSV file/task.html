@@ -1,0 +1,18 @@
+<div class="step-text">
+<p></p>
+<p></p><div class="alert alert-primary"> Another common file format apart from .txt files are the .csv files — <strong>CSV</strong> stands for Comma Separated Values.<br/>
+<br/>
+A CSV file stores values that are separated by a specific <strong>delimiter</strong>, commonly a comma <code class="java">(,)</code>. However, there are other common delimiters like the semicolon (<code class="java">;</code>), a tab (<code class="java">\t</code>), blank spaces (<code class="java">" "</code>) and even the pipe character (<code class="java">|</code>).</div>
+<p>Now that you've been acquainted with CSV files, your task is to create a Go program that <strong>appends</strong> the comma-separated values contained within the <code class="java">data</code> variable into the <em>songs.csv</em> file.</p>
+<p>Below you can see the current contents of the <a href="https://stepik.org/media/attachments/lesson/809910/songs.csv" rel="noopener noreferrer nofollow" target="_blank"><em>songs.csv</em></a> file:</p>
+<pre><code class="java">Title,Artist,Album,Duration
+"Fix You","Coldplay","X&amp;Y",4:56
+"Clocks","Coldplay","A Rush of Blood to the Head",5:08
+"Yellow","Coldplay","Parachutes",4:27
+"Summertime Sadness","Lana Del Rey","Born to Die",4:25
+"Young and Beautiful","Lana Del Rey","Born to Die",3:56
+"Pumped Up Kicks","Foster the People","Torches",3:59
+</code></pre>
+<p>To do this, you need to use the <code class="java">os.OpenFile()</code> function first to open songs.csv with the <code class="java">os.O_APPEND</code>, <code class="java">os.O_WRONLY</code> flags and with permission mode <code class="java">0644</code>.</p>
+<p>Then you can use the <code class="java">fmt.Fprintln()</code> function to append the comma-separated values of songs contained within the <code class="java">data</code> variable to the <em>songs.csv</em> file.</p>
+</div>

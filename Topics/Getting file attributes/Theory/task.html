@@ -1,0 +1,155 @@
+<h2>Getting file attributes</h2>
+<div class="step-text">
+<p>Sometimes, you may need to interact with the <strong>OS</strong> (operating system) you are working on and access its features when creating your programs. In this topic, we'll learn how to perform such interactions using functions from the <code class="language-bash">os</code> package. Specifically, we'll look at the functions that help us work with file attributes and permissions.</p>
+<h5 id="current-working-directory">Current working directory</h5>
+<p>Before we start looking at the functions from the <code class="language-bash">os</code> package that help us interact with files, let's set up a Go project directory named <em><a href="https://stepik.org/media/attachments/lesson/677883/example.zip" rel="noopener noreferrer nofollow" target="_blank">example</a> </em>— it will contain the following files and directories:</p>
+<pre><code class="language-bash">$ tree -hF
+example
+├── [4.0K]  files/
+│   ├── [  32]  bikeshare.csv
+│   └── [ 13K]  goland.svg
+├── [  35]  info.txt
+└── [ 240]  main.go</code></pre>
+<p>You can download the <a href="https://stepik.org/media/attachments/lesson/677883/example.zip" rel="noopener noreferrer nofollow" target="_blank"><em>example</em> project files here.</a></p>
+<p>Now it's time to take a look at the <code class="language-bash">os.Getwd()</code> function — it returns a rooted path name corresponding to the current directory our <em>main.go</em> file is within:</p>
+<pre><code class="language-go">package main
+
+import (
+    "fmt"
+    "log"
+    "os"
+)
+
+func main() {
+    path, err := os.Getwd()
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(path)
+}
+
+// Output:
+// Linux/macOS -&gt; ~/GolandProjects/example
+// Windows -&gt; C:\GolandProjects\example</code></pre>
+<p></p><div class="alert alert-primary">As previously mentioned, Linux/macOS and Windows have different file paths! So please take notice of the different outputs of the <code class="language-bash">os.Getwd()</code> function in the above example!</div>
+<h5 id="getting-file-attributes">Getting file attributes</h5>
+<p>You've already seen how the <code class="language-bash">os</code> package allows us to interact with our project directory path. However, what if we needed to get specific attributes from the files in our project directory?</p>
+<p>Enter the <code class="language-bash">os.Stat()</code> function — it returns a <code class="language-bash">FileInfo</code> interface, describing the file or directory and an error. Let's take a look at how we can use it within our Go program to get the <code class="language-bash">FileInfo</code> from the <em>info.txt</em> file:</p>
+<pre><code class="language-go">...
+
+func main() {
+    fileInfo, err := os.Stat("info.txt")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println("File name:", fileInfo.Name())        // File name: info.txt
+    fmt.Println("Size:", fileInfo.Size(), "bytes")    // Size: 35 bytes
+    fmt.Println("Permission mode:", fileInfo.Mode())  // Permission mode: -rw-r--r--
+    fmt.Println("Last modified:", fileInfo.ModTime()) // Last modified: 2022-03-10 11:15:22 -0500 EST
+    fmt.Println("Is directory:", fileInfo.IsDir())    // Is directory: false
+}
+</code></pre>
+<p>The above methods, such as <code class="language-bash">Name()</code>, <code class="language-bash">Size()</code>, <code class="language-bash">Mode()</code> etc. from the <code class="language-bash">FileInfo</code> interface are self-explanatory. Additionally, there is one more method —  <code class="language-bash">Sys()</code> — that allows us to access the OS stat result directly, but take notice that we'll need to import the <code class="language-bash">syscall</code> package, and the interface might hold a different type depending on the OS:</p>
+<p>In Linux/macOS<em>,</em> we can access attributes from the <code class="language-bash">*syscall.Stat_t</code> struct:</p>
+<pre><code class="language-go">    stat, ok := fileInfo.Sys().(*syscall.Stat_t)
+    if ok {
+        fmt.Println("User identifier:", stat.Uid)  //  User identifier: 1000
+        fmt.Println("Group identifier:", stat.Gid) // Group identifier: 1000
+    }</code></pre>
+<p>To simplify our code, we'll assign <code class="language-bash">stat</code> to <code class="language-bash">Stat_t</code>; then we can access other file attributes of <em>info.txt</em>, such as the user identifier <code class="language-bash">Uid</code> or the group identifier <code class="language-bash">Gid</code>. You can take a look at other fields of the <code class="language-bash">Stat_t</code> struct in the <a href="https://pkg.go.dev/syscall#Stat_t" rel="noopener noreferrer nofollow" target="_blank">syscall package documentation.</a></p>
+<p>In Windows<em>,</em> we can access attributes from the <code class="language-bash">*syscall.Win32FileAttributeData</code> struct:</p>
+<pre><code class="language-go">    stat, ok := fileInfo.Sys().(*syscall.Win32FileAttributeData)
+    if ok {
+        fmt.Println(time.Unix(0, stat.CreationTime.Nanoseconds())) // 2022-03-10 11:15:26 -0500 -05
+        fmt.Println("Size:", stat.FileSizeLow, "bytes")            // Size: 35 bytes
+    }</code></pre>
+<p>The <code class="language-bash">Win32FileAttributeData</code> struct allows us to access file attributes like <code class="language-bash">CreationTime</code>, <code class="language-bash">FileSizeLow</code> and a few others. You can also take a look at other fields of the <code class="language-bash">Win32FileAttributeData</code> struct in the <a href="https://pkg.go.dev/syscall?GOOS=windows#Win32FileAttributeData" rel="noopener noreferrer nofollow" target="_blank">syscall package docs.</a></p>
+<h5 id="getting-file-modes-and-permission-bits">Getting file modes and permission bits</h5>
+<p>In the previous section, we've learned how to get a file's permission mode via the <code class="language-bash">Mode()</code> method of the <code class="language-bash">FileInfo</code> interface. The <code class="language-bash">Mode()</code> method returns a <code class="language-bash">FileMode</code> type that represents both a file's permission mode and permission bits:</p>
+<pre><code class="language-go">...
+
+func main() {
+    fileInfo, err := os.Stat("files")
+    if err != nil {
+        log.Fatal(err)
+    }
+    mode := fileInfo.Mode() // assign the FileMode value returned by the Mode() method to `mode`.
+    fmt.Printf("File perm. bits: %#o\n", mode.Perm()) // File perm. bits: 0775
+    fmt.Println("File type bits:", mode.Type())       // File type bits: d---------
+    fmt.Println("Is regular:", mode.IsRegular())      // Is regular: false
+}</code></pre>
+<p>In this case, we pass the <em>files</em> directory as an argument to the <code class="language-bash">os.Stat</code> function, and then we assign <code class="language-bash">mode</code> to the <code class="language-bash">fileInfo.Mode()</code> method. This returns a <code class="language-bash">FileMode</code> type with new methods that provide additional file information, such as:</p>
+<ul>
+<li><code class="language-bash">Perm()</code> — returns the file's permission bits, e.g. <code class="language-bash">0775</code> (read-write-execute), <code class="language-bash">0644</code> (read-write), or <code class="language-bash">0444</code> (read-only);</li>
+<li><code class="language-bash">Type()</code> — returns the type bits <code class="language-bash">d--------- </code>for a directory; <code class="language-bash">----------</code> for a regular or an executable file;</li>
+<li><code class="language-bash">IsRegular()</code> — returns <code class="language-bash">false</code> when the file is a directory and <code class="language-bash">true</code> when it's a regular or an executable file.</li>
+</ul>
+<p>If you want to know about other methods of the <code class="language-bash">FileMode</code> type, you can take a look at the <a href="https://pkg.go.dev/io/fs#FileMode.Perm" rel="noopener noreferrer nofollow" target="_blank">official docs.</a></p>
+<h5 id="checking-if-a-file-exists">Checking if a file exists</h5>
+<p>You already know how to get file attributes and file permissions information. However, what if we needed to check whether a specific file exists or not within our project directory? There are a few ways to do this; here, we'll showcase the most common ones.</p>
+<p>For one thing, we can check if a file exists by using <code class="language-bash">os.Stat()</code> along with the <code class="language-bash">os.IsNotExist()</code> function:</p>
+<pre><code class="language-go">...
+
+func main() {
+    fileName := "impostor.png"
+    fileInfo, err := os.Stat(fileName)
+    if os.IsNotExist(err) {
+        log.Fatal("The file ", fileName, " does not exist!")
+    }
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(fileInfo.Name(), "exists!")
+}</code></pre>
+<p>The above program checks if <em>impostor.png</em> exists within the <em>example</em> project directory; if the file doesn't exist, it logs the error and immediately exits the program.</p>
+<p>Another way to do this is with the <code class="language-bash">errors.Is()</code> function; to use it, you'll need to import the <code class="language-bash">errors</code> package:</p>
+<pre><code class="language-go">...
+
+func main() {
+    fileName := "impostor.png"
+    fileInfo, err := os.Stat(fileName)
+    if errors.Is(err, os.ErrNotExist) {
+        log.Fatal("The file ", fileName, " does not exist!")
+    }
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(fileInfo.Name(), "exists!")
+}</code></pre>
+<p>Since <em>impostor.png</em> doesn't exist within the <em>example</em> project directory, both programs will log the same custom error message and immediately exit the program:</p>
+<pre><code class="language-go">// 2022/03/16 09:16:21 The file impostor.png does not exist!</code></pre>
+<h5 id="the-iofs-package">The io/fs package</h5>
+<p>In <a href="https://go.dev/doc/go1.16#fs" rel="noopener noreferrer nofollow" target="_blank">Go version 1.16</a>, <code class="language-bash">os.Stat()</code>, <code class="language-bash">os.FileInfo</code> and <code class="language-bash">os.FileMode</code> were moved to the <code class="language-bash">io/fs</code> package. The <a href="https://pkg.go.dev/io/fs" rel="noopener noreferrer nofollow" target="_blank">new <code class="language-bash">io/fs</code> package</a> defines the <code class="language-bash">fs.FS</code> interface, an abstraction for read-only trees of files.</p>
+<p>An important detail is that <code class="language-bash">fs.FileInfo</code> and <code class="language-bash">fs.FileMode</code> preserve the same methods as <code class="language-bash">os.FileInfo</code> and <code class="language-bash">os.FileMode</code>.</p>
+<p>However, the new <code class="language-bash">fs.Stat()</code> function has one change: in contrast to <code class="language-bash">os.Stat()</code>, it takes two arguments instead of one — <code class="language-bash">fsys</code>, a <strong>file system</strong> of the <code class="language-bash">fs.FS</code> interface, and <code class="language-bash">name</code>, a string containing the name of the file:</p>
+<pre><code class="language-go">package main
+
+import (
+    "fmt"
+    "io/fs"
+    "log"
+    "os"
+)
+
+func main() {
+    fileInfo, err := fs.Stat(os.DirFS("files"), "goland.svg")
+    if err != nil {
+        log.Fatal(err)
+    }
+    mode := fileInfo.Mode()
+    fmt.Println("File name:", fileInfo.Name())      // File name: goland.svg
+    fmt.Printf("File perm. bits: %#o", mode.Perm()) // File perm. bits: 0775
+}</code></pre>
+<p>Since the file system argument requires the <code class="language-bash">fs.FS</code> interface; we can get it via the <code class="language-bash">os.DirFS()</code> function, which returns a file system of the <code class="language-bash">fs.FS</code> type. In this case, the returned file system will be the <em>files</em> directory, and the second argument is the file's name: <em>goland.svg. </em></p>
+<p>Finally, we'll once again call the <code class="language-bash">Mode()</code>, <code class="language-bash">Name()</code>, and <code class="language-bash">Perm()</code> methods on the <code class="language-bash">fs.FileInfo</code> interface. As previously mentioned, it keeps the same methods as <code class="language-bash">os.FileInfo</code>, so we'll get the same output as in the previous examples.</p>
+<h5 id="summary">Summary</h5>
+<p>In this topic, we have learned how to use Go to interact with and get information from files in the OS we are working on. Particularly, we've learned how to perform the following operations:</p>
+<ul>
+<li>Getting the current working directory with the <code class="language-bash">os.Getwd()</code> function;</li>
+<li>Getting basic file attributes, such as the file name, file size, and file permission mode with the <code class="language-bash">Name()</code>, <code class="language-bash">Size()</code> and <code class="language-bash">Mode()</code> methods of the <code class="language-bash">FileInfo</code> interface;</li>
+<li>Getting file permission bits and file type bits with the <code class="language-bash">Perm()</code> and <code class="language-bash">Type()</code> methods from the <code class="language-bash">FileMode</code> type;</li>
+<li>Checking if a specific file or directory exists with the <code class="language-bash">os.IsNotExist()</code> and <code class="language-bash">errors.Is()</code> functions.</li>
+</ul>
+<p>We've also learned that <code class="language-bash">os.Stat()</code>, <code class="language-bash">os.FileInfo</code>, and <code class="language-bash">os.FileMode</code> were moved to the <code class="language-bash">io/fs</code> package in <a href="https://go.dev/doc/go1.16#fs" rel="noopener noreferrer nofollow" target="_blank">Go version 1.16</a>, and that the only changed function was <code class="language-bash">fs.Stat()</code>, because it now takes two arguments instead of just the file name: a file system <code class="language-bash">fsys</code> and a file name <code class="language-bash">name</code>.</p>
+<p>Wow! This sure was a long topic! And now, it's time to test our newly acquired knowledge with some theory and coding tasks!</p>
+</div>

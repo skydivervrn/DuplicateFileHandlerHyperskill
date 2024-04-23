@@ -1,0 +1,29 @@
+<h2>Reading song verses from a file</h2>
+<div class="step-text">
+<p></p>
+<p>Patrick has received a text file <a href="https://stepik.org/media/attachments/lesson/611467/technologic.txt" rel="noopener noreferrer nofollow" target="_blank"><em>technologic.txt</em></a> with the first verse of Daft Punk's hit song Technologic.</p>
+<p>He wants to print the contents of the file line by line in his Go program; this is the code he has written so far:</p>
+<pre><code class="language-go">package main
+
+import (
+    "bufio"
+    "fmt"
+    "log"
+    "os"
+)
+
+func main () {
+    file, err := os.Open("technologic.txt")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer file.Close()
+
+    scanner := bufio.NewScanner(file)
+
+    for scanner.Scan() {
+        // What is the missing code line here to print the file contents?
+    }
+}</code></pre>
+<p>Please help him out by entering the missing code line below to print the file contents line by line:</p>
+</div>

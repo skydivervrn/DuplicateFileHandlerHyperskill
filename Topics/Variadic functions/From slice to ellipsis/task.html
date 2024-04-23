@@ -1,0 +1,12 @@
+<h2>From slice to ellipsis</h2>
+<div class="step-text">
+<p></p><p>The code below contains the function <code class="language-go">Evens()</code>. The function returns <code class="language-go">true</code> if all the given numbers are even, otherwise it returns <code class="language-go">false</code>. The parameter of the function is a slice. You need to rewrite the code using a variadic parameter.</p><pre><code class="language-go">func Evens(numbers []int) bool {
+    for _, n := range numbers {
+        if n%2 != 0 {
+            return false
+        }
+    }
+
+    return true
+}</code></pre><p>In the input, you get three numbers. You need to output the result that the function returns.</p><br><b>Sample Input:</b><br><pre><code class="language-no-highlight">1 2 3<br></code></pre><br><b>Sample Output:</b><br><pre><code class="language-no-highlight">false<br></code></pre><br><br><br><font color="gray">Memory limit: 256 MB</font><br><font color="gray">Time limit: 8 seconds</font><br><br>
+</div>
